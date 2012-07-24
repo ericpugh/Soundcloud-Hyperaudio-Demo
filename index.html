@@ -1,0 +1,812 @@
+<!DOCTYPE HTML>
+<html class="no-js">
+<head>
+    <meta charset="utf-8" />
+      <title>Popcorn Soundcloud Hyperaudio Demo</title>
+
+      <link href="css/soundcloud.css" type="text/css" rel="stylesheet" media="screen" />
+      <link href='http://fonts.googleapis.com/css?family=Leckerli+One' rel='stylesheet' type='text/css'>
+      
+      <!-- jquery scripts -->
+      <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+      <!-- Popcorn -->
+      <script type="text/javascript" src="js/soundcloud.player.api.js"></script>
+      <script type="text/javascript" src="js/modernizr.complete.js"></script>
+      <script type="text/javascript" src="js/popcorn-complete.js"></script>
+      <script type="text/javascript" src="js/popcorn.transcript.plugin.js"></script>
+      <!-- scroll script -->
+      <script type="text/javascript" src="js/jquery.scrollTo-1.4.2-min.js"></script>
+      <script type="text/javascript" src="js/jquery.easing.1.3.js"></script>
+      
+      
+	<script type="text/javascript" charset="utf-8">
+	  
+	      $(document).ready(function(){
+		      // ------- a simple auto-play example ----------
+			      var SCApiKey = "7f293a1d5fddb694643dd05f5b1c7f21";
+			      var SCMediaId = "30601944";
+			      
+			  var popcorn = Popcorn(Popcorn.soundcloud( 
+				      "SCplayer", 
+				      "http://soundcloud.com/onmdap/after-elections-what-now-for", {
+					      width: "100%",
+					      height: "81px",//Default: 81px
+					      showComments: true,
+						      api: {// Optional, information for Soundcloud API interaction
+							      key: SCApiKey,//Soundcloud API key
+							      commentdiv: "SCcomments",//the Div Id for outputting comments.
+							      //TODO: truncate comment body if too long.
+							      commentformat: (function() {
+								      return function(comment) {
+									      return '<div class="comment-item"><a href="' + comment.user.profile + '">' +
+											 '<img class="comment-avatar" width="75px" height="75px" src="' + comment.user.avatar + '" /></a>' +
+											      '<a class="comment-user" href="' + comment.user.profile + '">' + comment.user.name + '</a>' + 	   
+											 '<p class="comment-body">' + comment.text + '</p>' +
+											 '</div>';
+									      }
+								      })() 						
+						      }
+						      
+				      }));
+				      
+			      //console.log(comment);
+			      
+			      popcorn.video.registerPopcornWithPlayer(popcorn);
+			      
+			      popcorn.listen( "load", function() {
+				      
+				document.getElementById("media-duration").innerHTML = popcorn.duration();
+				document.getElementById("media-volume").innerHTML = popcorn.volume();
+				document.getElementById("media-currentTime").innerHTML = popcorn.currentTime();
+				
+				popcorn.listen("timeupdate", function() {
+				      document.getElementById("media-currentTime").innerHTML = popcorn.currentTime();
+				});
+				
+				popcorn.video.addEventListener("readystatechange", function() {
+				      document.getElementById("media-readyState").innerHTML = popcorn.video.readyState;
+				});
+				
+				popcorn.listen("volumechange", function() {
+				      document.getElementById("media-volume").innerHTML = popcorn.volume();
+				});
+				
+				//play onload
+				popcorn.trigger("play");
+			      });
+	      
+	      // Empty for the purposes of allowing popcorn.trigger("play");
+	      popcorn.listen( "play", function() {
+		      console.log("played");
+	      });
+		      
+		      //listen for canplay an event from Popcorn's soudcloud plugin
+		      popcorn.listen("canplay", function() {
+			      console.log("Can Play");
+			      
+			      //flip the order of the comments for display purposes.
+			      //comments = $("#SCcomments"); //parent elem
+			      //comments.children().each(function(i,div){comments.prepend(div)})
+			      //comments.children().each(function(i,comment){console.log("found comment")})
+			      //commentlist = $("#SCcomments div").filter(function() { return $(this).css("display") == "none" })
+			      //console.log(commentlist);
+			      //console.log("there are " + commentlist.length + " comments");
+		      }); //end canplay event listener
+		      
+		      popcorn.listen("seeked", function(){
+			      //Scroll to the active word
+			      activeWord = $(".readme").first();
+			      $('div.pane').stop().scrollTo(activeWord,800);
+		      }); //end timeupdate event listener
+		      
+		      //listen for loadmetadata
+		      popcorn.listen("loadedmetadata", function() {
+			      console.log("Meta Data loaded");
+		      }); //end loadedmetadata event listener
+		      
+		      // Reset all scrollable panes on page reload
+		      $('div.pane').scrollTo(0);
+		      
+		      // transcript link to soundcloud timeline
+		      $('#transcript #transcript-content').delegate('span','click',function(){  
+			      var jumpTo = $(this).attr('m')/1000; 
+			      console.log("jump to " + jumpTo);
+				       
+			      //jump timeline
+			      popcorn.currentTime(jumpTo).play();
+				      
+			      //get the clicked word and display definition
+			      var lookup = $(this).text();
+			      getDefinition(lookup);
+				      
+			      return false;
+		      });
+			      
+		      //add future class to transcript for readability
+		      $("#transcript-content span").each(function(i) { 
+			      var timeInSecs = $(this).attr("m") / 1000;
+			      popcorn.transcript({
+				      time: timeInSecs,
+				      futureClass: "readme",
+				      target: this
+			      });  
+		      }); 
+		      
+		      //submit a comment with the audio's current timestamp
+		      //TODO: Oauth consumer key for posting comments.
+		      // Need to execute an intermediate page where user first authenticates.
+		      $('div.submit-comment-link').delegate('p','click',function(){  
+			      var commentTime = popcorn.currentTime(); 
+			      console.log("comment time: " + commentTime);
+			      //send via soundcloud api
+			      $.ajax({
+				url: 'http://api.soundcloud.com/comments/13685794.js',
+				type: 'POST',
+				data: 'timestamp=' + commentTime + '&body=this is a test comment&track_id=' +
+				SCMediaId + '&consumer_key=' + 'INSERT_CONSUMER_KEY',
+				success: function(data) {
+				      $('.submit-comment-msg').html(data);
+				      console.log('Submit Success');
+				      console.log(data);
+				}
+			      });				
+			      return false;
+		      });
+		      
+		      //display the definition of clicked word
+		      function getDefinition(lookup){
+			      //ignore short words
+			      if(lookup.length > 5){
+				      //set loading image
+				      $("#definition").addClass('loading');
+				      
+				      $.getJSON("http://en.wiktionary.org/w/api.php?action=query&list=search&rvprop=content&format=json&srsearch="+ lookup +"&callback=?",
+					      function(json, status){
+						      if(status == "success"){
+							      //output the word definition box
+							      $("#definition").hide();
+							      //TODO title is undefined when no result returned
+							      var definitionTitle = json.query.search[0].title;
+							      var definitionText = json.query.search[0].snippet;
+							      //console.log("the definition is: " + definitionTitle + ", " + definitionText);
+							      if(definitionTitle.length > 0){
+								      $("#definition p.word").html(definitionTitle);
+								      $("#definition p.word-definition").html(definitionText);
+								      $("#definition").removeClass('loading');
+								      $("#definition").show();
+							      }
+						      }
+				      });
+			      }
+		      } //end func getDefinition
+		      
+				      
+	      });
+      
+      </script>
+      
+      
+      <!--[if lt IE 9]>
+	<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+      <![endif]-->
+
+</head>
+
+<body>
+<div id="wrapper">
+<div id="header">
+      <h1><span class="popcorn"><a href="http://popcornjs.org">Popcorn</a></span> <span class="soundcloud"><a href="http://soundcloud.com">Soundcloud</a></span> <span class="hyperaudio"><a href="http://www.happyworm.com/">Hyperaudio</a></span> <span class="pughio"><a href="http://pugh.io">Demo</a></h1>
+</div>
+
+<div id="main-container">
+
+<div id="SCplayer"></div>
+    <div id="player-state">
+        <p>Current Time (s): <span id="media-currentTime"></span></p>
+        <p>Duration (s): <span id="media-duration"></span></p>
+        <p>Volume (0-1): <span id="media-volume"></span></p>
+        <p>Ready State: <span id="media-readyState">0</span></p>
+    </div>
+<div id="track-info"></div>
+
+<!-- wikitionary definition -->
+<div id="definition" class="ui-state-highlight ui-corner-all" style="display:none;">
+    <span class="ui-icon ui-icon-info"></span><p class="word"></p><p class="word-definition">
+</div>
+
+<div id="transcript">
+        <div id="transcript-content" class="pane">
+            <span m="5000" oval="This" class="first">This</span>
+            <span m="5790" oval="is">is</span>
+            <span m="6092" oval="IN">IN</span>
+            <span m="6487" oval="THE">THE</span>
+            <span m="6975" oval="NEWS">NEWS</span>
+            <span m="7277" oval="in">in</span>
+            <span m="7695" oval="VOA">VOA</span>
+            <span m="8508" oval="Special">Special</span>
+            <span m="9438" oval="English">English.</span>
+            <span m="10000" oval="This">This</span>
+            <span m="10969" oval="week">week,</span>
+            <span m="11582" oval="people">people</span>
+            <span m="11839" oval="in">in</span>
+            <span m="12175" oval="the">the</span>
+            <span m="13124" oval="Democratic">Democratic</span>
+            <span m="13895" oval="Republic">Republic</span>
+            <span m="14152" oval="of">of</span>
+            <span m="14666" oval="Congo">Congo</span>
+            <span m="15180" oval="voted">voted</span>
+            <span m="15516" oval="for">for</span>
+            <span m="16366" oval="president">president</span>
+            <span m="16702" oval="and">and</span>
+            <span m="17770" oval="parliament">parliament.</span>
+            <span m="18000" oval="On">On</span>
+            <span m="19018" oval="Friday">Friday,</span>
+            <span m="19911" oval="President">President</span>
+            <span m="20534" oval="Joseph">Joseph</span>
+            <span m="21178" oval="Kabila">Kabila</span>
+            <span m="21635" oval="took">took</span>
+            <span m="21905" oval="an">an</span>
+            <span m="22445" oval="early">early</span>
+            <span m="22902" oval="lead">lead</span>
+            <span m="23172" oval="in">in</span>
+            <span m="23525" oval="the">the</span>
+            <span m="23982" oval="vote">vote</span>
+            <span m="24647" oval="count">count.</span>
+            <span m="25000" oval="Election">Election</span>
+            <span m="26764" oval="officials">officials</span>
+            <span m="27226" oval="have">have</span>
+            <span m="27688" oval="said">said</span>
+            <span m="28129" oval="they">they</span>
+            <span m="28570" oval="will">will</span>
+            <span m="29284" oval="publish">publish</span>
+            <span m="29641" oval="the">the</span>
+            <span m="30082" oval="full">full</span>
+            <span m="30796" oval="results">results</span>
+            <span m="31048" oval="by">by</span>
+            <span m="31909" oval="Tuesday">Tuesday,</span>
+            <span m="32350" oval="when">when</span>
+            <span m="32707" oval="his">his</span>
+            <span m="33148" oval="term">term</span>
+            <span m="33715" oval="ends">ends.</span>
+            <span m="34000" oval="Some">Some</span>
+            <span m="34517" oval="of">of</span>
+            <span m="34768" oval="his">his</span>
+            <span m="35019" oval="ten">ten</span>
+            <span m="35654" oval="opponents">opponents</span>
+            <span m="35964" oval="want">want</span>
+            <span m="36215" oval="the">the</span>
+            <span m="36599" oval="votes">votes</span>
+            <span m="37323" oval="cancelled">cancelled.</span>
+            <span m="39000" oval="Parliamentary">Parliamentary</span>
+            <span m="40783" oval="results">results</span>
+            <span m="41121" oval="are">are</span>
+            <span m="41440" oval="not">not</span>
+            <span m="42172" oval="expected">expected</span>
+            <span m="42660" oval="until">until</span>
+            <span m="43430" oval="January">January.</span>
+            <span m="44000" oval="Human">Human</span>
+            <span m="45307" oval="Rights">Rights</span>
+            <span m="45901" oval="Watch">Watch</span>
+            <span m="46400" oval="says">says</span>
+            <span m="48183" oval="electionrelated">election-related</span>
+            <span m="49134" oval="violence">violence</span>
+            <span m="49847" oval="killed">killed</span>
+            <span m="50156" oval="at">at</span>
+            <span m="50774" oval="least">least</span>
+            <span m="51725" oval="eighteen">eighteen</span>
+            <span m="52771" oval="civilians">civilians</span>
+            <span m="53175" oval="and">and</span>
+            <span m="54221" oval="seriously">seriously</span>
+            <span m="55053" oval="wounded">wounded</span>
+            <span m="55481" oval="one">one</span>
+            <span m="56289" oval="hundred">hundred</span>
+            <span m="57145" oval="others">others.</span>
+            <span m="57000" oval="The">The</span>
+            <span m="58216" oval="government">government</span>
+            <span m="58615" oval="says">says</span>
+            <span m="58862" oval="it">it</span>
+            <span m="59109" oval="is">is</span>
+            <span m="59926" oval="preparing">preparing</span>
+            <span m="60249" oval="for">for</span>
+            <span m="60572" oval="the">the</span>
+            <span m="61560" oval="possibility">possibility</span>
+            <span m="61807" oval="of">of</span>
+            <span m="62225" oval="more">more</span>
+            <span m="62985" oval="violence">violence</span>
+            <span m="63479" oval="after">after</span>
+            <span m="63802" oval="the">the</span>
+            <span m="64448" oval="results">results</span>
+            <span m="64790" oval="are">are</span>
+            <span m="65740" oval="announced">announced.</span>
+            <span m="66000" oval="The">The</span>
+            <span m="67130" oval="United">United</span>
+            <span m="67954" oval="Nations">Nations</span>
+            <span m="68566" oval="urged">urged</span>
+            <span m="69060" oval="calm">calm</span>
+            <span m="69672" oval="after">after</span>
+            <span m="71132" oval="international">international</span>
+            <span m="72144" oval="observers">observers</span>
+            <span m="73062" oval="reported">reported</span>
+            <span m="74192" oval="widespread">widespread</span>
+            <span m="74898" oval="voting">voting</span>
+            <span m="75933" oval="problems">problems.</span>
+            <span m="76000" oval="African">African</span>
+            <span m="77500" oval="observers">observers</span>
+            <span m="78423" oval="considered">considered</span>
+            <span m="78750" oval="the">the</span>
+            <span m="79519" oval="election">election</span>
+            <span m="79692" oval="a">a</span>
+            <span m="80462" oval="success">success.</span>
+            <span m="81000" oval="The">The</span>
+            <span m="81849" oval="huge">huge</span>
+            <span m="82589" oval="central">central</span>
+            
+            <span m="83351" oval="African">African</span>
+            <span m="84091" oval="country">country</span>
+            <span m="84461" oval="was">was</span>
+            <span m="85310" oval="supposed">supposed</span>
+            <span m="85593" oval="to">to</span>
+            <span m="86072" oval="vote">vote</span>
+            <span m="86529" oval="just">just</span>
+            <span m="86812" oval="on">on</span>
+            <span m="87596" oval="Monday">Monday.</span>
+            <span m="88000" oval="But">But</span>
+            <span m="88951" oval="voting">voting</span>
+            <span m="89841" oval="continued">continued</span>
+            <span m="90529" oval="through">through</span>
+            <span m="91399" oval="Wednesday">Wednesday</span>
+            <span m="91925" oval="after">after</span>
+            <span m="92613" oval="ballots">ballots</span>
+            <span m="92957" oval="and">and</span>
+            <span m="93483" oval="voter">voter</span>
+            <span m="93989" oval="lists">lists</span>
+            <span m="94616" oval="failed">failed</span>
+            <span m="94879" oval="to">to</span>
+            <span m="95506" oval="arrive">arrive</span>
+            <span m="95769" oval="at">at</span>
+            <span m="96214" oval="some">some</span>
+            <span m="96902" oval="polling">polling</span>
+            <span m="97813" oval="stations">stations.</span>
+            <span m="99000" oval="Congo">Congo</span>
+            <span m="99594" oval="is">is</span>
+            <span m="99792" oval="no">no</span>
+            <span m="100371" oval="stranger">stranger</span>
+            <span m="100569" oval="to">to</span>
+            <span m="101270" oval="violence">violence.</span>
+            <span m="102000" oval="The">The</span>
+            <span m="103200" oval="country">country</span>
+            <span m="104094" oval="formerly">formerly</span>
+            <span m="104800" oval="called">called</span>
+            <span m="105436" oval="Zaire">Zaire</span>
+            <span m="105836" oval="has">has</span>
+            <span m="106448" oval="faced">faced</span>
+            <span m="107908" oval="international">international</span>
+            <span m="108826" oval="pressure">pressure</span>
+            <span m="109132" oval="to">to</span>
+            <span m="109626" oval="stop">stop</span>
+            <span m="109932" oval="an">an</span>
+            <span m="110874" oval="epidemic">epidemic</span>
+            <span m="111180" oval="of">of</span>
+            <span m="111933" oval="rapes">rapes.</span>
+            <span m="112000" oval="Five">Five</span>
+            <span m="112949" oval="years">years</span>
+            <span m="113305" oval="ago">ago</span>
+            <span m="113562" oval="it">it</span>
+            <span m="114155" oval="passed">passed</span>
+            <span m="114906" oval="stronger">stronger</span>
+            <span m="115321" oval="laws">laws</span>
+            <span m="116013" oval="against">against</span>
+            <span m="116626" oval="sexual">sexual</span>
+            <span m="117536" oval="violence">violence.</span>
+            <span m="118000" oval="Then">Then,</span>
+            <span m="118960" oval="in">in</span>
+            <span m="120040" oval="February">February,</span>
+            <span m="120256" oval="a">a</span>
+            <span m="121192" oval="military">military</span>
+            <span m="121816" oval="court">court</span>
+            <span m="122128" oval="in">in</span>
+            <span m="122968" oval="eastern">eastern</span>
+            <span m="123592" oval="Congo">Congo</span>
+            <span m="124624" oval="sentenced">sentenced</span>
+            <span m="124936" oval="an">an</span>
+            <span m="125440" oval="army">army</span>
+            <span m="126472" oval="commander">commander</span>
+            <span m="126784" oval="to">to</span>
+            <span m="127480" oval="twenty">twenty</span>
+            <span m="128104" oval="years">years</span>
+            <span m="128416" oval="in">in</span>
+            <span m="129136" oval="prison">prison</span>
+            <span m="129544" oval="for">for</span>
+            <span m="130264" oval="crimes">crimes</span>
+            <span m="131104" oval="against">against</span>
+            <span m="132184" oval="humanity">humanity.</span>
+            <span m="133000" oval="Lieutenant">Lieutenant</span>
+            <span m="134867" oval="Colonel">Colonel</span>
+            <span m="135556" oval="Kibibi">Kibibi</span>
+            <span m="136334" oval="Mutware">Mutware</span>
+            <span m="136712" oval="was">was</span>
+            <span m="137290" oval="found">found</span>
+            <span m="137957" oval="guilty">guilty</span>
+            <span m="138246" oval="of">of</span>
+            <span m="139002" oval="sending">sending</span>
+            <span m="139380" oval="his">his</span>
+            <span m="140047" oval="troops">troops</span>
+            <span m="140336" oval="on">on</span>
+            <span m="140714" oval="New">New</span>
+            <span m="141381" oval="Years">Year's</span>
+            <span m="141759" oval="Day">Day</span>
+            <span m="142048" oval="to">to</span>
+            <span m="142671" oval="rape">rape,</span>
+            <span m="143160" oval="beat">beat</span>
+            <span m="143538" oval="and">and</span>
+            <span m="144116" oval="steal">steal</span>
+            <span m="144405" oval="in">in</span>
+            <span m="145028" oval="Fizi">Fizi.</span>
+            <span m="145000" oval="The">The</span>
+            <span m="146237" oval="United">United</span>
+            <span m="147139" oval="Nations">Nations</span>
+            <span m="147809" oval="noted">noted</span>
+            <span m="148144" oval="it">it</span>
+            <span m="148582" oval="was">was</span>
+            <span m="149020" oval="the">the</span>
+            <span m="149664" oval="first">first</span>
+            <span m="150231" oval="time">time</span>
+            <span m="150463" oval="a">a</span>
+            <span m="151674" oval="highlevel">high-level</span>
+            <span m="152086" oval="DRC">DRC</span>
+            <span m="153194" oval="commander">commander</span>
+            <span m="153632" oval="was">was</span>
+            <span m="154792" oval="arrested">arrested,</span>
+            <span m="155462" oval="tried">tried</span>
+            <span m="155900" oval="and">and</span>
+            <span m="157008" oval="sentenced">sentenced</span>
+            <span m="157446" oval="for">for</span>
+            <span m="159327" oval="conflictrelated">conflict-related</span>
+            <span m="160126" oval="sexual">sexual</span>
+            <span m="161312" oval="violence">violence.</span>
+            <span m="161000" oval="Judges">Judges</span>
+            <span m="162364" oval="also">also</span>
+            <span m="163492" oval="sentenced">sentenced</span>
+            <span m="164174" oval="three">three</span>
+            <span m="164515" oval="of">of</span>
+            <span m="164961" oval="his">his</span>
+            <span m="165984" oval="officers">officers</span>
+            <span m="166325" oval="to">to</span>
+            <span m="167086" oval="twenty">twenty</span>
+            <span m="167926" oval="years">years,</span>
+            <span m="168372" oval="and">and</span>
+            <span m="168949" oval="five">five</span>
+            <span m="169972" oval="soldiers">soldiers</span>
+            <span m="170313" oval="to">to</span>
+            <span m="170864" oval="long">long</span>
+            <span m="171992" oval="sentences">sentences</span>
+            <span m="172333" oval="as">as</span>
+            <span m="173042" oval="well">well.</span>
+            <span m="173000" oval="All">All</span>
+            <span m="174065" oval="sides">sides</span>
+            <span m="174387" oval="in">in</span>
+            <span m="174808" oval="the">the</span>
+            <span m="175204" oval="DRC">DRC</span>
+            <span m="175749" oval="have">have</span>
+            <span m="176269" oval="long">long</span>
+            <span m="176814" oval="used">used</span>
+            <span m="177582" oval="sexual">sexual</span>
+            <span m="178573" oval="violence">violence</span>
+            <span m="178895" oval="as">as</span>
+            <span m="179118" oval="a">a</span>
+            <span m="179886" oval="weapon">weapon</span>
+            <span m="180208" oval="of">of</span>
+            <span m="180778" oval="war">war.</span>
+            <span m="181000" oval="This">This</span>
+            <span m="181658" oval="woman">woman</span>
+            <span m="181952" oval="told">told</span>
+            <span m="182190" oval="her">her</span>
+            <span m="182540" oval="story">story</span>
+            <span m="182722" oval="to">to</span>
+            <span m="183268" oval="reporter">reporter</span>
+            <span m="183758" oval="Heather">Heather</span>
+            <span m="184318" oval="Murdock">Murdock.</span>
+            <span m="185000" oval="WOMAN">WOMAN</span>
+            <span m="185539" oval="in">[in</span>
+            <span m="186078" oval="Swahili">Swahili]:</span>
+            <span m="186241" oval="I">"I</span>
+            <span m="186454" oval="was">was</span>
+            <span m="186893" oval="married">married</span>
+            <span m="187106" oval="and">and</span>
+            <span m="187219" oval="I">I</span>
+            <span m="187432" oval="was">was</span>
+            <span m="187983" oval="pregnant">pregnant.</span>
+            <span m="188309" oval="Rebel">Rebel</span>
+            <span m="188798" oval="soldiers">soldiers</span>
+            <span m="189074" oval="came">came</span>
+            <span m="189237" oval="to">to</span>
+            <span m="189513" oval="loot">loot</span>
+            <span m="189726" oval="and">and</span>
+            <span m="189989" oval="they">they</span>
+            <span m="190315" oval="raped">raped</span>
+            <span m="190553" oval="me">me.</span>
+            <span m="191000" oval="They">[They]</span>
+            <span m="191621" oval="killed">killed</span>
+            <span m="191747" oval="my">my</span>
+            <span m="191968" oval="baby">baby</span>
+            <span m="192147" oval="and">and</span>
+            <span m="192326" oval="now">now</span>
+            <span m="192421" oval="I">I</span>
+            <span m="192653" oval="have">have</span>
+            <span m="192748" oval="a">a</span>
+            <span m="193233" oval="disease">disease."</span>
+            <span m="194000" oval="Officials">Officials</span>
+            <span m="195145" oval="and">and</span>
+            <span m="195952" oval="activists">activists</span>
+            <span m="196459" oval="agree">agree</span>
+            <span m="196853" oval="that">that</span>
+            <span m="197172" oval="the">the</span>
+            <span m="198017" oval="situation">situation</span>
+            <span m="198261" oval="is">is</span>
+            <span m="198824" oval="better">better</span>
+            <span m="199143" oval="now">now</span>
+            <span m="199387" oval="in">in</span>
+            <span m="200044" oval="eastern">eastern</span>
+            <span m="200645" oval="Congo">Congo.</span>
+            <span m="201000" oval="Congos">Congo's</span>
+            <span m="202365" oval="two">two</span>
+            <span m="203409" oval="thousand">thousand</span>
+            <span m="203864" oval="six">six</span>
+            <span m="204453" oval="rape">rape</span>
+            <span m="204908" oval="law">law</span>
+            <span m="205363" oval="has">has</span>
+            <span m="205952" oval="made">made</span>
+            <span m="206193" oval="a">a</span>
+            <span m="207639" oval="difference">difference.</span>
+            <span m="208000" oval="The">The</span>
+            <span m="208867" oval="central">central</span>
+            <span m="209377" oval="prison">prison</span>
+            <span m="209598" oval="in">in</span>
+            <span m="210023" oval="North">North</span>
+            <span m="210397" oval="Kivu">Kivu</span>
+            <span m="210618" oval="is">is</span>
+            <span m="211196" oval="crowded">crowded</span>
+            <span m="211553" oval="with">with</span>
+            <span m="211842" oval="men">men</span>
+            <span m="212284" oval="found">found</span>
+            <span m="212794" oval="guilty">guilty</span>
+            <span m="213015" oval="of">of</span>
+            <span m="213491" oval="rape">rape.</span>
+            <span m="215000" oval="But">But</span>
+            <span m="216110" oval="lawyers">lawyers</span>
+            <span m="216480" oval="and">and</span>
+            <span m="217220" oval="victims">victims</span>
+            <span m="217590" oval="say">say</span>
+            <span m="218700" oval="lawlessness">lawlessness</span>
+            <span m="218983" oval="in">in</span>
+            <span m="219353" oval="the">the</span>
+            <span m="220485" oval="countryside">countryside</span>
+            <span m="221051" oval="means">means</span>
+            <span m="221508" oval="many">many</span>
+            <span m="222248" oval="rapists">rapists</span>
+            <span m="222531" oval="go">go</span>
+            <span m="223707" oval="unpunished">unpunished.</span>
+            <span m="224000" oval="North">North</span>
+            <span m="225278" oval="Kivus">Kivu's</span>
+            <span m="226091" oval="Justice">Justice</span>
+            <span m="226997" oval="Minister">Minister</span>
+            <span m="227903" oval="Francois">Francois</span>
+            <span m="229134" oval="Tuyihimbaze">Tuyihimbaze</span>
+            <span m="230063" oval="Rucogoza">Rucogoza</span>
+            <span m="230551" oval="says">says</span>
+            <span m="231039" oval="most">most</span>
+            <span m="231341" oval="of">of</span>
+            <span m="231736" oval="the">the</span>
+            <span m="232526" oval="victims">victims</span>
+            <span m="233037" oval="live">live</span>
+            <span m="233548" oval="deep">deep</span>
+            <span m="233850" oval="in">in</span>
+            <span m="234640" oval="lawless">lawless</span>
+            <span m="235244" oval="rural">rural</span>
+            <span m="236011" oval="areas">areas.</span>
+            <span m="236000" oval="But">But</span>
+            <span m="236667" oval="he">he</span>
+            <span m="237134" oval="says">says</span>
+            <span m="237512" oval="the">the</span>
+            <span m="238001" oval="rape">rape</span>
+            <span m="238379" oval="law">law</span>
+            <span m="238757" oval="has">has</span>
+            <span m="239424" oval="slowed">slowed</span>
+            <span m="239802" oval="the">the</span>
+            <span m="240291" oval="rate">rate</span>
+            <span m="240580" oval="of">of</span>
+            <span m="241470" oval="attacks">attacks.</span>
+            <span m="242000" oval="FRANCOIS">FRANCOIS</span>
+            <span m="243154" oval="TUYIHIMBAZE">TUYIHIMBAZE</span>
+            <span m="243656" oval="RUCOGOZA">RUCOGOZA</span>
+            <span m="243869" oval="in">[in</span>
+            <span m="244332" oval="French">French]:</span>
+            <span m="244595" oval="The">"The</span>
+            <span m="245084" oval="military">military</span>
+            <span m="245397" oval="helps">helps</span>
+            <span m="245786" oval="impose">impose</span>
+            <span m="246225" oval="justice">justice</span>
+            <span m="246388" oval="in">in</span>
+            <span m="246764" oval="places">places</span>
+            <span m="246927" oval="we">we</span>
+            <span m="247303" oval="cannot">cannot</span>
+            <span m="247541" oval="go">go.</span>
+            <span m="248000" oval="For">For</span>
+            <span m="248536" oval="example">example,</span>
+            <span m="248776" oval="where">where</span>
+            <span m="249016" oval="there">there</span>
+            <span m="249136" oval="is">is</span>
+            <span m="249219" oval="a">a</span>
+            <span m="249579" oval="military">military</span>
+            <span m="250050" oval="operation">operation,</span>
+            <span m="250244" oval="they">they</span>
+            <span m="250438" oval="help">help</span>
+            <span m="250558" oval="us">us</span>
+            <span m="250835" oval="punish">punish</span>
+            <span m="250992" oval="the">the</span>
+            <span m="251509" oval="perpetrators">perpetrators</span>
+            <span m="251629" oval="of">of</span>
+            <span m="251915" oval="sexual">sexual</span>
+            <span m="252377" oval="violence">violence."</span>
+            <span m="253000" oval="At">At</span>
+            <span m="253676" oval="the">the</span>
+            <span m="254172" oval="same">same</span>
+            <span m="254803" oval="time">time,</span>
+            <span m="255795" oval="officials">officials</span>
+            <span m="256178" oval="say">say</span>
+            <span m="257576" oval="international">international</span>
+            <span m="258455" oval="pressure">pressure</span>
+            <span m="258748" oval="to">to</span>
+            <span m="259221" oval="stop">stop</span>
+            <span m="259604" oval="the">the</span>
+            <span m="260190" oval="rapes">rapes</span>
+            <span m="260483" oval="in">in</span>
+            <span m="261069" oval="Congo">Congo</span>
+            <span m="261452" oval="has">has</span>
+            <span m="261835" oval="had">had</span>
+            <span m="262128" oval="an">an</span>
+            <span m="263210" oval="unintended">unintended</span>
+            <span m="264021" oval="effect">effect.</span>
+            <span m="264000" oval="The">The</span>
+            <span m="264871" oval="law">law,</span>
+            <span m="265328" oval="they">they</span>
+            <span m="265829" oval="say">say,</span>
+            <span m="266961" oval="establishes">establishes</span>
+            <span m="267244" oval="no">no</span>
+            <span m="268289" oval="difference">difference</span>
+            <span m="269051" oval="between">between</span>
+            <span m="269726" oval="sexual">sexual</span>
+            <span m="270597" oval="violence">violence</span>
+            <span m="270967" oval="and">and</span>
+            <span m="271337" oval="sex">sex</span>
+            <span m="271903" oval="under">under</span>
+            <span m="272273" oval="the">the</span>
+            <span m="272665" oval="age">age</span>
+            <span m="272948" oval="of">of</span>
+            <span m="273950" oval="eighteen">eighteen.</span>
+            <span m="274000" oval="Yet">Yet</span>
+            <span m="274769" oval="when">when</span>
+            <span m="275477" oval="younger">younger</span>
+            <span m="275983" oval="girls">girls</span>
+            <span m="276327" oval="get">get</span>
+            <span m="277157" oval="married">married,</span>
+            <span m="277582" oval="that">that</span>
+            <span m="278108" oval="means">means</span>
+            <span m="278634" oval="their">their</span>
+            <span m="279160" oval="young">young</span>
+            <span m="279929" oval="husbands">husbands</span>
+            <span m="280293" oval="are">are</span>
+            <span m="281325" oval="technically">technically</span>
+            <span m="281932" oval="guilty">guilty</span>
+            <span m="282195" oval="of">of</span>
+            <span m="282762" oval="rape">rape.</span>
+            <span m="283000" oval="This">This</span>
+            <span m="284320" oval="prisoner">prisoner</span>
+            <span m="284892" oval="named">named</span>
+            <span m="285574" oval="Kakule">Kakule</span>
+            <span m="286036" oval="says">says</span>
+            <span m="286322" oval="he">he</span>
+            <span m="286608" oval="is">is</span>
+            <span m="287268" oval="guilty">guilty</span>
+            <span m="287730" oval="only">only</span>
+            <span m="288016" oval="of">of</span>
+            <span m="288852" oval="marrying">marrying</span>
+            <span m="289424" oval="young">young</span>
+            <span m="289798" oval="and">and</span>
+            <span m="290172" oval="not">not</span>
+            <span m="290744" oval="being">being</span>
+            <span m="291228" oval="able">able</span>
+            <span m="291514" oval="to">to</span>
+            <span m="291888" oval="pay">pay</span>
+            <span m="292086" oval="a">a</span>
+            <span m="292768" oval="dowry">dowry.</span>
+            <span m="293000" oval="KAKULE">KAKULE:</span>
+            <span m="293938" oval="I">"I</span>
+            <span m="294348" oval="went">went</span>
+            <span m="294602" oval="to">to</span>
+            <span m="294836" oval="my">my</span>
+            <span m="296066" oval="girlfriends">girlfriend’s</span>
+            <span m="296652" oval="family">family</span>
+            <span m="296906" oval="to">to</span>
+            <span m="297590" oval="propose">propose</span>
+            <span m="298489" oval="marriage">marriage,</span>
+            <span m="298821" oval="but">but</span>
+            <span m="298997" oval="I">I</span>
+            <span m="299329" oval="had">had</span>
+            <span m="299993" oval="nothing">nothing</span>
+            <span m="300247" oval="to">to</span>
+            <span m="300677" oval="give">give</span>
+            <span m="301009" oval="for">for</span>
+            <span m="301185" oval="a">a</span>
+            <span m="301790" oval="dowry">dowry.</span>
+            <span m="302000" oval="When">When</span>
+            <span m="302389" oval="her">her</span>
+            <span m="302696" oval="family">family</span>
+            <span m="303105" oval="realized">realized</span>
+            <span m="303238" oval="we">we</span>
+            <span m="303463" oval="were">were</span>
+            <span m="303719" oval="still">still</span>
+            <span m="304180" oval="together">together,</span>
+            <span m="304395" oval="they">they</span>
+            <span m="304753" oval="accused">accused</span>
+            <span m="304886" oval="me">me</span>
+            <span m="305019" oval="of">of</span>
+            <span m="305347" oval="rape">rape."</span>
+            <span m="306000" oval="Aid">Aid</span>
+            <span m="307144" oval="workers">workers</span>
+            <span m="307518" oval="and">and</span>
+            <span m="308266" oval="victims">victims</span>
+            <span m="308640" oval="say">say</span>
+            <span m="309014" oval="the">the</span>
+            <span m="309476" oval="only">only</span>
+            <span m="309960" oval="real">real</span>
+            <span m="310334" oval="way">way</span>
+            <span m="310620" oval="to">to</span>
+            <span m="311082" oval="stop">stop</span>
+            <span m="311456" oval="the">the</span>
+            <span m="312028" oval="rapes">rapes</span>
+            <span m="312314" oval="is">is</span>
+            <span m="312600" oval="to">to</span>
+            <span m="312974" oval="end">end</span>
+            <span m="313348" oval="the">the</span>
+            <span m="313810" oval="many">many</span>
+            <span m="314382" oval="years">years</span>
+            <span m="314668" oval="of">of</span>
+            <span m="315504" oval="conflict">conflict</span>
+            <span m="315966" oval="that">that</span>
+            <span m="316538" oval="Congo">Congo</span>
+            <span m="316912" oval="has">has</span>
+            <span m="317902" oval="suffered">suffered.</span>
+            <span m="318000" oval="And">And</span>
+            <span m="319277" oval="thats">that's</span>
+            <span m="319638" oval="IN">IN</span>
+            <span m="320110" oval="THE">THE</span>
+            <span m="320693" oval="NEWS">NEWS</span>
+            <span m="321054" oval="in">in</span>
+            <span m="321554" oval="VOA">VOA</span>
+            <span m="322526" oval="Special">Special</span>
+            <span m="323637" oval="English">English.</span>
+            <span m="324109" oval="Im">I'm</span>
+            <span m="324831" oval="Steve">Steve</span>
+            <span m="325720" oval="Ember" class="last">Ember.</span>
+    </div><!-- end transcript-content -->
+</div><!-- end transcript -->
+
+</div><!-- end main container -->
+
+<div id="sidebar" class="">
+    <div class="comments-header">
+        <h2>Comments</h2>
+    </div>
+    <div class="submit-comment-link"><p>Post a comment</p></div>
+    <div class="submit-comment-msg"></div>
+	<div id="SCcomments" class="ui-widget"></div>
+</div><!-- end sidebar -->
+
+<div id="footer">
+	<p></p>
+</div>
+
+</div> <!-- end wrapper -->
+</body>
+</html>

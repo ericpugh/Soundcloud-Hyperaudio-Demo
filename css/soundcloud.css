@@ -1,0 +1,159 @@
+body{
+	background:url("/html5/resources/images/grey-bg.png")repeat-y top center #EEEEEE;
+}
+h1{
+	margin:10px;
+	font-family: 'Leckerli One', cursive;
+}
+h1 span a{
+	text-decoration: none;
+	color: #999;
+}
+h1 span.soundcloud a, h1 span.pughio a{
+	text-decoration: none;
+	color: #000;
+}
+h1 span a{
+	padding-left: 35px;
+}
+h1 span.popcorn a{
+	background: url("../images/popcornjs.png") no-repeat left center;
+}
+h1 span.soundcloud a{
+	background: url("../images/soundcloud.png") no-repeat left center;
+}
+h1 span.hyperaudio a{
+	background: url("../images/hyperaudio.png") no-repeat left center;
+}
+h1 span.pughio a{
+	background: url("../images/pughio.png") no-repeat left center;
+}
+#wrapper{
+	width:1100px;
+	margin:10px auto;
+	border:1px #CCC solid;
+	background-color:#FFF;
+	min-height:750px;
+}
+#wrapper .loading{
+	background:url("/html5/resources/images/pirobox_ajax-loader.gif")no-repeat top center;
+}
+#main-container{
+	width:650px;
+	float:left;
+	border-right:1px solid #CCC;
+	padding:10px;
+	margin:5px auto;
+}
+#header{
+	width:100%;
+	height:80px;	
+}
+#sidebar{
+    width: 400px;
+    float: left;
+    margin: 0 10px;
+}
+
+#transcript{
+	margin-top:20px;
+	clear:both;
+	padding:15px;
+}
+#transcript #transcript-content{
+	background:url('resources/images/gradFFFFFF.png') repeat-x top center;
+	height:300px;
+	width:600px;
+	overflow:auto;
+}
+#transcript span{
+	cursor:pointer;
+}
+#transcript #transcript-content span{
+	color:#CCC;
+}
+#transcript #transcript-content span.readme{
+	color:#000;
+}
+#transcript span:hover{
+	background-color:#FFFF99;
+}
+#definition{
+	border:1px dotted #CCC;
+	margin:5px;
+	padding:5px;
+	clear:both;
+	font-size:smaller;
+}
+#definition p.word {t
+	ext-transform:capitalize;
+	margin:0 0 0 5px;
+	font-size:larger;
+}
+#definition h5 {
+	margin:0;
+}
+#player-state{
+	font-size:9px;
+	color:#999;
+}
+#player-state p{
+	float:left;
+	width:125px;
+}
+#player-state p span{
+	font-weight:bold;
+}
+
+/* comments */
+#sidebar div.comments-header{
+	background: url('resources/images/left-arrow.png')no-repeat center left;
+    padding: 0 0 0 25px;
+}
+#sidebar div.comments-header h2{
+    margin: 0;
+	border-radius: 10px;
+	background-color: #CCC;
+	-moz-border-radius: 10px;
+	padding: 20px;
+	-moz-box-shadow: 10px 10px 5px #EEE;
+	-webkit-box-shadow: 10px 10px 5px #EEE;
+	box-shadow: 10px 10px 5px #EEE;
+}
+.submit-comment-link p{
+	display:block;
+}
+.submit-comment-link p:hover{
+	cursor:pointer;
+}
+#SCcomments{
+	max-height:750px;
+	overflow:auto;
+	margin:15px 0 0 0;
+}
+.comment-item{
+	clear:both;
+	margin:5px 0;
+}
+.comment-item .comment-avatar{
+	float:left;
+	padding:5px;
+	border:1px solid #CCC;
+	margin: 0 10px 0 0;
+}
+.comment-item a.comment-user{
+	color:#000;
+	text-decoration:none;
+	margin:0;
+	padding:0;
+}
+.comment-item p.comment-body{
+	color:#333;
+	font-size:smaller;
+	margin:5px 0;
+}
+
+#footer{
+	clear:both;
+	text-align:center;
+}
