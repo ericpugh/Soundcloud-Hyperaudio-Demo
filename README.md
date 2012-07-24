@@ -1,5 +1,7 @@
 # Popcorn Soundcloud Hyperaudio Demo
 
+[View the live demo](http://ericpugh.github.com/Soundcloud-Hyperaudio-Demo/)
+
 This is a quick an easy demo of hyperaudio using a soundcloud audio file.
 The popcorn library is used to tie the transcript text to the audio timeline.
 Both popcorn.js and Soundcloud API have been updated since I typed this up... so please feel free to make it good. 
