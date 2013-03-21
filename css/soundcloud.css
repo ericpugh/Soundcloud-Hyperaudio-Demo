@@ -1,5 +1,5 @@
 body{
-	background:url("/html5/resources/images/grey-bg.png")repeat-y top center #EEEEEE;
+	background:url("../images/grey-bg.png")repeat-y top center #EEEEEE;
 }
 h1{
 	margin:10px;
@@ -25,9 +25,6 @@ h1 span.soundcloud a{
 h1 span.hyperaudio a{
 	background: url("../images/hyperaudio.png") no-repeat left center;
 }
-h1 span.pughio a{
-	background: url("../images/pughio.png") no-repeat left center;
-}
 #wrapper{
 	width:1100px;
 	margin:10px auto;
@@ -36,7 +33,7 @@ h1 span.pughio a{
 	min-height:750px;
 }
 #wrapper .loading{
-	background:url("/html5/resources/images/pirobox_ajax-loader.gif")no-repeat top center;
+	background:url("../images/loading.gif")no-repeat top center;
 }
 #main-container{
 	width:650px;
@@ -54,6 +51,13 @@ h1 span.pughio a{
     float: left;
     margin: 0 10px;
 }
+#SCplayer{
+	height:175px;
+}
+
+#SCplayer iframe{
+	border: none;
+}
 
 #transcript{
 	margin-top:20px;
@@ -61,7 +65,6 @@ h1 span.pughio a{
 	padding:15px;
 }
 #transcript #transcript-content{
-	background:url('resources/images/gradFFFFFF.png') repeat-x top center;
 	height:300px;
 	width:600px;
 	overflow:auto;
@@ -107,7 +110,6 @@ h1 span.pughio a{
 
 /* comments */
 #sidebar div.comments-header{
-	background: url('resources/images/left-arrow.png')no-repeat center left;
     padding: 0 0 0 25px;
 }
 #sidebar div.comments-header h2{
@@ -134,6 +136,7 @@ h1 span.pughio a{
 .comment-item{
 	clear:both;
 	margin:5px 0;
+	padding:5px 0;
 }
 .comment-item .comment-avatar{
 	float:left;

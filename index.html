@@ -7,195 +7,12 @@
       <link href="css/soundcloud.css" type="text/css" rel="stylesheet" media="screen" />
       <link href='http://fonts.googleapis.com/css?family=Leckerli+One' rel='stylesheet' type='text/css'>
       
-      <!-- jquery scripts -->
-      <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-      <!-- Popcorn -->
-      <script type="text/javascript" src="js/soundcloud.player.api.js"></script>
-      <script type="text/javascript" src="js/modernizr.complete.js"></script>
-      <script type="text/javascript" src="js/popcorn-complete.js"></script>
-      <script type="text/javascript" src="js/popcorn.transcript.plugin.js"></script>
-      <!-- scroll script -->
-      <script type="text/javascript" src="js/jquery.scrollTo-1.4.2-min.js"></script>
-      <script type="text/javascript" src="js/jquery.easing.1.3.js"></script>
-      
-      
-	<script type="text/javascript" charset="utf-8">
-	  
-	      $(document).ready(function(){
-		      // ------- a simple auto-play example ----------
-			      var SCApiKey = "7f293a1d5fddb694643dd05f5b1c7f21";
-			      var SCMediaId = "30601944";
-			      
-			  var popcorn = Popcorn(Popcorn.soundcloud( 
-				      "SCplayer", 
-				      "http://soundcloud.com/onmdap/after-elections-what-now-for", {
-					      width: "100%",
-					      height: "81px",//Default: 81px
-					      showComments: true,
-						      api: {// Optional, information for Soundcloud API interaction
-							      key: SCApiKey,//Soundcloud API key
-							      commentdiv: "SCcomments",//the Div Id for outputting comments.
-							      //TODO: truncate comment body if too long.
-							      commentformat: (function() {
-								      return function(comment) {
-									      return '<div class="comment-item"><a href="' + comment.user.profile + '">' +
-											 '<img class="comment-avatar" width="75px" height="75px" src="' + comment.user.avatar + '" /></a>' +
-											      '<a class="comment-user" href="' + comment.user.profile + '">' + comment.user.name + '</a>' + 	   
-											 '<p class="comment-body">' + comment.text + '</p>' +
-											 '</div>';
-									      }
-								      })() 						
-						      }
-						      
-				      }));
-				      
-			      //console.log(comment);
-			      
-			      popcorn.video.registerPopcornWithPlayer(popcorn);
-			      
-			      popcorn.listen( "load", function() {
-				      
-				document.getElementById("media-duration").innerHTML = popcorn.duration();
-				document.getElementById("media-volume").innerHTML = popcorn.volume();
-				document.getElementById("media-currentTime").innerHTML = popcorn.currentTime();
-				
-				popcorn.listen("timeupdate", function() {
-				      document.getElementById("media-currentTime").innerHTML = popcorn.currentTime();
-				});
-				
-				popcorn.video.addEventListener("readystatechange", function() {
-				      document.getElementById("media-readyState").innerHTML = popcorn.video.readyState;
-				});
-				
-				popcorn.listen("volumechange", function() {
-				      document.getElementById("media-volume").innerHTML = popcorn.volume();
-				});
-				
-				//play onload
-				popcorn.trigger("play");
-			      });
-	      
-	      // Empty for the purposes of allowing popcorn.trigger("play");
-	      popcorn.listen( "play", function() {
-		      console.log("played");
-	      });
-		      
-		      //listen for canplay an event from Popcorn's soudcloud plugin
-		      popcorn.listen("canplay", function() {
-			      console.log("Can Play");
-			      
-			      //flip the order of the comments for display purposes.
-			      //comments = $("#SCcomments"); //parent elem
-			      //comments.children().each(function(i,div){comments.prepend(div)})
-			      //comments.children().each(function(i,comment){console.log("found comment")})
-			      //commentlist = $("#SCcomments div").filter(function() { return $(this).css("display") == "none" })
-			      //console.log(commentlist);
-			      //console.log("there are " + commentlist.length + " comments");
-		      }); //end canplay event listener
-		      
-		      popcorn.listen("seeked", function(){
-			      //Scroll to the active word
-			      activeWord = $(".readme").first();
-			      $('div.pane').stop().scrollTo(activeWord,800);
-		      }); //end timeupdate event listener
-		      
-		      //listen for loadmetadata
-		      popcorn.listen("loadedmetadata", function() {
-			      console.log("Meta Data loaded");
-		      }); //end loadedmetadata event listener
-		      
-		      // Reset all scrollable panes on page reload
-		      $('div.pane').scrollTo(0);
-		      
-		      // transcript link to soundcloud timeline
-		      $('#transcript #transcript-content').delegate('span','click',function(){  
-			      var jumpTo = $(this).attr('m')/1000; 
-			      console.log("jump to " + jumpTo);
-				       
-			      //jump timeline
-			      popcorn.currentTime(jumpTo).play();
-				      
-			      //get the clicked word and display definition
-			      var lookup = $(this).text();
-			      getDefinition(lookup);
-				      
-			      return false;
-		      });
-			      
-		      //add future class to transcript for readability
-		      $("#transcript-content span").each(function(i) { 
-			      var timeInSecs = $(this).attr("m") / 1000;
-			      popcorn.transcript({
-				      time: timeInSecs,
-				      futureClass: "readme",
-				      target: this
-			      });  
-		      }); 
-		      
-		      //submit a comment with the audio's current timestamp
-		      //TODO: Oauth consumer key for posting comments.
-		      // Need to execute an intermediate page where user first authenticates.
-		      $('div.submit-comment-link').delegate('p','click',function(){  
-			      var commentTime = popcorn.currentTime(); 
-			      console.log("comment time: " + commentTime);
-			      //send via soundcloud api
-			      $.ajax({
-				url: 'http://api.soundcloud.com/comments/13685794.js',
-				type: 'POST',
-				data: 'timestamp=' + commentTime + '&body=this is a test comment&track_id=' +
-				SCMediaId + '&consumer_key=' + 'INSERT_CONSUMER_KEY',
-				success: function(data) {
-				      $('.submit-comment-msg').html(data);
-				      console.log('Submit Success');
-				      console.log(data);
-				}
-			      });				
-			      return false;
-		      });
-		      
-		      //display the definition of clicked word
-		      function getDefinition(lookup){
-			      //ignore short words
-			      if(lookup.length > 5){
-				      //set loading image
-				      $("#definition").addClass('loading');
-				      
-				      $.getJSON("http://en.wiktionary.org/w/api.php?action=query&list=search&rvprop=content&format=json&srsearch="+ lookup +"&callback=?",
-					      function(json, status){
-						      if(status == "success"){
-							      //output the word definition box
-							      $("#definition").hide();
-							      //TODO title is undefined when no result returned
-							      var definitionTitle = json.query.search[0].title;
-							      var definitionText = json.query.search[0].snippet;
-							      //console.log("the definition is: " + definitionTitle + ", " + definitionText);
-							      if(definitionTitle.length > 0){
-								      $("#definition p.word").html(definitionTitle);
-								      $("#definition p.word-definition").html(definitionText);
-								      $("#definition").removeClass('loading');
-								      $("#definition").show();
-							      }
-						      }
-				      });
-			      }
-		      } //end func getDefinition
-		      
-				      
-	      });
-      
-      </script>
-      
-      
-      <!--[if lt IE 9]>
-	<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-      <![endif]-->
-
 </head>
 
 <body>
 <div id="wrapper">
 <div id="header">
-      <h1><span class="popcorn"><a href="http://popcornjs.org">Popcorn</a></span> <span class="soundcloud"><a href="http://soundcloud.com">Soundcloud</a></span> <span class="hyperaudio"><a href="http://www.happyworm.com/">Hyperaudio</a></span> <span class="pughio"><a href="http://pugh.io">Demo</a></h1>
+      <h1><span class="popcorn"><a href="http://popcornjs.org">Popcorn</a></span> <span class="soundcloud"><a href="http://soundcloud.com">Soundcloud</a></span> <span class="hyperaudio"><a href="http://www.happyworm.com/">Hyperaudio</a></span> 
 </div>
 
 <div id="main-container">
@@ -798,9 +615,7 @@
     <div class="comments-header">
         <h2>Comments</h2>
     </div>
-    <div class="submit-comment-link"><p>Post a comment</p></div>
-    <div class="submit-comment-msg"></div>
-	<div id="SCcomments" class="ui-widget"></div>
+    <div id="SCcomments" class="ui-widget"></div>
 </div><!-- end sidebar -->
 
 <div id="footer">
@@ -808,5 +623,128 @@
 </div>
 
 </div> <!-- end wrapper -->
+
+
+      <!-- jquery scripts -->
+       <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+      <!-- Popcorn -->
+      <script type="text/javascript" src="http://popcornjs.org/code/dist/popcorn-complete.min.js"></script>
+      <script type="text/javascript" src="js/popcorn.transcript.plugin.js"></script>
+      <!-- soundcloud api -->
+      <script src="http://connect.soundcloud.com/sdk.js"></script>
+      <!-- scroll script -->
+      <script type="text/javascript" src="js/jquery.scrollTo-1.4.2-min.js"></script>
+      <script type="text/javascript" src="js/jquery.easing.1.3.js"></script>
+      
+      
+      <script type="text/javascript" charset="utf-8">
+        
+            $(document).ready(function(){
+
+                  //http://popcornjs.org/documentation
+                  var popcorn = Popcorn.soundcloud("SCplayer", "http://soundcloud.com/onmdap/after-elections-what-now-for");
+                  popcorn.on( "load", function() {
+                        popcorn.play();
+                        document.getElementById("media-duration").innerHTML = popcorn.duration();
+                        document.getElementById("media-volume").innerHTML = popcorn.volume();
+                        document.getElementById("media-currentTime").innerHTML = popcorn.currentTime();
+                        // Reset all scrollable panes
+                        $('div.pane').scrollTo(0);
+                        //write the sc comments in sidebar
+                        getComments();
+                  });
+                  popcorn.on("timeupdate", function() {
+                        document.getElementById("media-currentTime").innerHTML = popcorn.currentTime();
+                  });
+                  popcorn.on("volumechange", function() {
+                        document.getElementById("media-volume").innerHTML = popcorn.volume();
+                  });
+                  popcorn.on("readystatechange", function() {
+                        document.getElementById("media-readyState").innerHTML = popcorn.video.readyState;
+                  });
+                  popcorn.on("seeked", function(){
+                        //Scroll to the active word
+                        activeWord = $(".readme").first();
+                        $('div.pane').stop().scrollTo(activeWord,800);
+                  });
+                  // transcript link to soundcloud timeline
+                  $('#transcript #transcript-content span').on('click',function(){  
+                        var jumpTo = $(this).attr('m')/1000; 
+                        //jump timeline
+                        popcorn.currentTime(jumpTo).play();
+                        //get the clicked word and display definition
+                        var lookup = $(this).text();
+                        getDefinition(lookup);
+                        return false;
+                  });
+                        
+                  //add "future" class to transcript for readability
+                  $("#transcript-content span").each(function(i) { 
+                        var timeInSecs = $(this).attr("m") / 1000;
+                        popcorn.transcript({
+                              time: timeInSecs,
+                              futureClass: "readme",
+                              target: this
+                        });  
+                  }); 
+                  
+                  function getComments(){
+                        //output soundcloud comments
+                        //TODO: convert the time from Soundcloud to seconds so we can link the output comment to the audio timeline.
+                        var comment;
+                        $.getJSON("http://api.soundcloud.com/tracks/30601944/comments.json?client_id=7f293a1d5fddb694643dd05f5b1c7f21",
+                              function(json, status){
+                                    if(status == "success"){
+                                            for (var i = 0; i < json.length; i++){
+                                                if(json[i].kind == 'comment'){
+                                                      commentDiv = $('#SCcomments');
+                                                      comment = '<div class="comment-item"><a href="' + json[i].user.permalink_url + '">' +
+                                                       '<img class="comment-avatar" width="75px" height="75px" src="' + json[i].user.avatar_url + '" /></a>' +
+                                                            '<a class="comment-user" href="' + json[i].user.permalink_url + '">' + json[i].user.username + '</a>' +      
+                                                       '<p class="comment-body">' + json[i].body + '</p>' +
+                                                       '</div>';
+                                                       commentDiv.prepend(comment);
+                                                }
+                                          }
+                                    }
+                              });
+                  } // end getComments
+
+                  //display the definition of clicked word
+                  function getDefinition(lookup){
+                        //ignore short words
+                        if(lookup.length > 5){
+                              //set loading image
+                              $("#definition").addClass('loading');
+                              $.getJSON("http://en.wiktionary.org/w/api.php?action=query&list=search&rvprop=content&format=json&srsearch="+ lookup +"&callback=?",
+                                    function(json, status){
+                                          if(status == "success"){
+                                                //output the word definition box
+                                                $("#definition").hide();
+                                                //TODO title is undefined when no result returned
+                                                var definitionTitle = json.query.search[0].title;
+                                                var definitionText = json.query.search[0].snippet;
+                                                //console.log("the definition is: " + definitionTitle + ", " + definitionText);
+                                                if(definitionTitle.length > 0){
+                                                      $("#definition p.word").html(definitionTitle);
+                                                      $("#definition p.word-definition").html(definitionText);
+                                                      $("#definition").removeClass('loading');
+                                                      $("#definition").show();
+                                                }
+                                          }
+                              });
+                        }
+                  } //end getDefinition
+                  
+                              
+            });
+      
+      </script>
+      
+      
+      <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+      <![endif]-->
+
 </body>
 </html>
